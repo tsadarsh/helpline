@@ -3,6 +3,9 @@
 Turn a regular English request into a **shell command for the OS you are on**, then **run it**.
 
 ```text
+$ helpline lhelpline list directories edited in the last 24 hours and are bigger than 5MB
+# runs: find . -mindepth 1 -maxdepth 1 -type d -mtime -1 -exec sh -c 'size=$(du -sm "$1" | cut -f1); [ "$size" -gt 5 ] && echo "$1 ($size MB)"' _ {} \;
+
 $ helpline list all files in my home dir
 # runs: ls ~
 ```
