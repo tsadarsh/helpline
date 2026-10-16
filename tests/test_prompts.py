@@ -33,6 +33,15 @@ def test_examples_cover_user_stories() -> None:
         queries = [query for query, _command in examples_for(os)]
         assert any("foobar" in query for query in queries)
         assert any("5MB" in query or "5mb" in query.lower() for query in queries)
+        assert any("home dir" in query for query in queries)
+
+    macos = dict(examples_for(TargetOS.MACOS))
+    assert macos["list all files in my home dir"] == "ls ~"
+
+
+def test_prompt_warns_against_glued_tilde() -> None:
+    prompt = build_prompt(_request(TargetOS.MACOS, "list all files in my home dir"))
+    assert "never 'ls ~l'" in prompt.system
 
 
 def test_empty_query_rejected() -> None:

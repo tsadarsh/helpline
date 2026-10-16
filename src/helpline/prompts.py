@@ -38,6 +38,10 @@ _OS_RULES: dict[TargetOS, str] = {
 _EXAMPLES: dict[TargetOS, tuple[tuple[str, str], ...]] = {
     TargetOS.LINUX: (
         (
+            "list all files in my home dir",
+            "ls ~",
+        ),
+        (
             "find me all the files in the cwd that has the word foobar in its content",
             'grep -rnw . -e "foobar"',
         ),
@@ -49,6 +53,10 @@ _EXAMPLES: dict[TargetOS, tuple[tuple[str, str], ...]] = {
     ),
     TargetOS.MACOS: (
         (
+            "list all files in my home dir",
+            "ls ~",
+        ),
+        (
             "find me all the files in the cwd that has the word foobar in its content",
             'grep -rnw . -e "foobar"',
         ),
@@ -59,6 +67,10 @@ _EXAMPLES: dict[TargetOS, tuple[tuple[str, str], ...]] = {
         ),
     ),
     TargetOS.WINDOWS: (
+        (
+            "list all files in my home dir",
+            "Get-ChildItem -Force $HOME",
+        ),
         (
             "find me all the files in the cwd that has the word foobar in its content",
             "Get-ChildItem -Recurse -File | Select-String -Pattern 'foobar'",
@@ -95,6 +107,8 @@ def build_prompt(request: TranslationRequest) -> Prompt:
         "Rules:\n"
         "- One command only. Pipelines, &&, ||, and ; chains are allowed when needed.\n"
         "- Prefer tools that ship with the OS. Do not invent flags.\n"
+        "- ~ is the home directory. Never glue letters onto it (use 'ls ~' or 'ls $HOME', "
+        "never 'ls ~l').\n"
         "- Do not add destructive flags (rm -rf, Remove-Item -Recurse -Force, format, "
         "dd of=) unless the user clearly asked to delete or overwrite.\n"
         "- Do not wrap the command in comments or an explanation outside JSON.\n"

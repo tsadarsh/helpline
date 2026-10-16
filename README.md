@@ -1,13 +1,13 @@
 # helpline
 
-Turn a regular English request into a **shell command for the OS you are on**.
+Turn a regular English request into a **shell command for the OS you are on**, then **run it**.
 
 ```text
-$ helpline find me all the files in the cwd that has the word foobar in its content
-grep -rnw . -e "foobar"
+$ helpline list all files in my home dir
+# runs: ls ~
 ```
 
-Helpline does **not** run the command. It prints it so you can read it, edit it, or pipe it yourself.
+Use `--print` if you only want to see the command. `--json` also prints without running.
 
 A local **open-weights** model (via [Ollama](https://ollama.com)) does the translation. Nothing is sent to a cloud API.
 
@@ -31,7 +31,8 @@ python3 -m pip install -e ".[dev]"
 
 ```bash
 helpline list directories edited in the last 24 hours bigger than 5MB
-helpline --os windows find files containing foobar
+helpline --print find files containing foobar
+helpline --os windows --print find files containing foobar
 helpline --json count lines in all python files
 helpline doctor
 ```
@@ -42,8 +43,9 @@ helpline doctor
 | `--shell {posix,powershell}` | Override dialect |
 | `--model NAME` | Ollama model (`HELPLINE_MODEL`) |
 | `--host URL` | Ollama base URL |
-| `--json` | Structured output |
-| `-v` / `--verbose` | Print model notes on stderr |
+| `--print` | Print the command; do not run it |
+| `--json` | Structured output (does not run) |
+| `-v` / `--verbose` | Print the resolved command to stderr, then run |
 
 Environment:
 
@@ -55,7 +57,7 @@ Environment:
 1. Detect OS (`win32` → Windows / PowerShell, `darwin` → macOS / BSD userland, otherwise Linux / GNU).
 2. Build a strict JSON prompt with OS-specific rules and few-shot examples.
 3. Ask the local Ollama chat API (`temperature=0`, `format=json`).
-4. Parse `{"command": "...", "notes": "..."}` and print `command`.
+4. Parse `{"command": "...", "notes": "..."}` and run `command` in your shell (PowerShell on Windows).
 
 ## Tests
 
@@ -70,6 +72,7 @@ Network is not required; the Ollama client is mocked.
 ```text
 src/helpline/           # installable package
   cli.py                # argparse entry point
+  execute.py            # run the translated command
   translator.py         # prompt → model → parse
   prompts.py            # OS-specific instructions
   backends/ollama.py    # local HTTP client

@@ -8,6 +8,7 @@ from collections.abc import Sequence
 from helpline import __version__
 from helpline.backends.ollama import OllamaBackend, OllamaError, model_is_installed
 from helpline.config import load_settings
+from helpline.execute import ExecError, run_command
 from helpline.os_info import detect_os, detect_shell
 from helpline.parse import ParseError
 from helpline.translator import Translator
@@ -40,6 +41,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(f"helpline: {exc}", file=sys.stderr)
         return 1
 
+    if args.verbose:
+        print(f"+ {result.command}", file=sys.stderr)
+        if result.notes:
+            print(result.notes, file=sys.stderr)
+
     if args.json:
         payload = {
             "command": result.command,
@@ -49,11 +55,17 @@ def main(argv: Sequence[str] | None = None) -> int:
             "model": result.model,
         }
         print(json.dumps(payload, indent=2))
-    else:
+        return 0
+
+    if args.print:
         print(result.command)
-        if args.verbose and result.notes:
-            print(result.notes, file=sys.stderr)
-    return 0
+        return 0
+
+    try:
+        return run_command(result.command, shell=shell)
+    except (ExecError, OSError) as exc:
+        print(f"helpline: failed to run {result.command!r}: {exc}", file=sys.stderr)
+        return 1
 
 
 def _cmd_doctor(args: argparse.Namespace) -> int:
@@ -81,8 +93,8 @@ def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="helpline",
         description=(
-            "Translate a natural-language request into a shell command for this OS. "
-            "Requires a local Ollama server and an open-weights model."
+            "Translate a natural-language request into a shell command for this OS "
+            "and run it. Requires a local Ollama server and an open-weights model."
         ),
     )
     parser.add_argument("--version", action="version", version=f"helpline {__version__}")
@@ -106,15 +118,20 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--json",
         action="store_true",
-        help="Print command, notes, OS, and model as JSON.",
+        help="Print command, notes, OS, and model as JSON (does not run the command).",
+    )
+    parser.add_argument(
+        "--print",
+        action="store_true",
+        help="Print the command instead of running it.",
     )
     parser.add_argument(
         "-v",
         "--verbose",
         action="store_true",
-        help="Print model notes to stderr.",
+        help="Print the resolved command (and notes) to stderr before running.",
     )
-    parser.epilog = "Examples: helpline list files modified today | helpline doctor"
+    parser.epilog = "Examples: helpline list files in my home dir | helpline --print list files"
     return parser
 
 
